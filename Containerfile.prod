@@ -1,0 +1,27 @@
+FROM node:23-alpine AS build
+WORKDIR /app
+
+# Install PostgreSQL client for migrations during build
+RUN apk add --no-cache postgresql-client && \
+    rm -rf /var/cache/apk/*
+
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+RUN npm install -g pnpm @nestjs/cli && \
+    pnpm install --frozen-lockfile
+COPY . .
+RUN pnpm build
+
+FROM node:23-alpine AS prod
+ENV NODE_ENV=production
+WORKDIR /app
+
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+RUN npm install -g pnpm drizzle-kit && \
+    HUSKY=0 pnpm install --prod --frozen-lockfile && \
+    pnpm store prune && \
+    npm cache clean --force
+COPY --from=build /app/dist ./dist
+COPY --from=build /app/drizzle ./drizzle
+
+EXPOSE 4001
+CMD ["node", "dist/main"]

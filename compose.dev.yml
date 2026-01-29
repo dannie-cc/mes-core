@@ -1,0 +1,65 @@
+services:
+    api:
+        image: '${CI_REGISTRY_IMAGE}:${CI_COMMIT_SHA}'
+        env_file:
+            - .env
+        ports:
+            - '4000:4000' # Dev uses port 4000
+        network_mode: host
+        environment:
+            - NODE_ENV="${NODE_ENV}"
+        depends_on:
+            postgres:
+                condition: service_healthy
+            redis:
+                condition: service_healthy
+        volumes:
+            - ./logs:/app/logs
+            # Add volume for live development if needed
+            # - .:/app  # Uncomment for live code reloading in dev
+        networks: []
+        restart: unless-stopped
+
+    postgres:
+        image: postgres:15-alpine
+        env_file:
+            - .env
+        ports:
+            - '5433:5432' # Dev uses port 5433 (maps to container 5432)
+        environment:
+            POSTGRES_USER: ${POSTGRES_USER}
+            POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+            POSTGRES_DB: ${POSTGRES_DB}
+        volumes:
+            - postgres_data:/var/lib/postgresql/data
+        networks: []
+        healthcheck:
+            test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}']
+            interval: 10s
+            timeout: 5s
+            retries: 5
+        restart: unless-stopped
+
+    redis:
+        image: redis:7-alpine
+        env_file:
+            - .env
+        ports:
+            - '6380:6379' # Dev uses port 6380 (maps to container 6379)
+        command: redis-server --requirepass "${REDIS_PASSWORD}"
+        volumes:
+            - redis_data:/data
+        networks: []
+        healthcheck:
+            test: redis-cli ping || exit 1
+            interval: 10s
+            timeout: 5s
+            retries: 5
+        restart: unless-stopped
+
+volumes:
+    redis_data:
+    postgres_data:
+# networks:
+#     dannie-network:
+#         driver: bridge

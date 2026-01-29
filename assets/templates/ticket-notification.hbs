@@ -1,0 +1,206 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="format-detection" content="telephone=no">
+    <meta name="color-scheme" content="light dark">
+    <meta name="supported-color-schemes" content="light dark">
+    <title>New Support Ticket Notification - Dannie CC</title>
+    <!--[if mso]>
+    <noscript>
+        <xml>
+            <o:OfficeDocumentSettings>
+                <o:PixelsPerInch>96</o:PixelsPerInch>
+            </o:OfficeDocumentSettings>
+        </xml>
+    </noscript>
+    <![endif]-->
+    <style>
+        body, table, td, p, a, li, blockquote {
+            -webkit-text-size-adjust: 100%;
+            -ms-text-size-adjust: 100%;
+        }
+        table, td {
+            mso-table-lspace: 0pt;
+            mso-table-rspace: 0pt;
+        }
+        img {
+            -ms-interpolation-mode: bicubic;
+            border: 0;
+            height: auto;
+            line-height: 100%;
+            outline: none;
+            text-decoration: none;
+        }
+        @media (prefers-color-scheme: dark) {
+            .email-container {
+                background-color: #1a1a1a !important;
+                color: #ffffff !important;
+            }
+            .email-body {
+                background-color: #2d2d2d !important;
+                border-color: #404040 !important;
+            }
+            .text-primary {
+                color: #ffffff !important;
+            }
+            .text-secondary {
+                color: #b3b3b3 !important;
+            }
+            .url-block {
+                background-color: #404040 !important;
+                color: #ffffff !important;
+            }
+        }
+        @media screen and (max-width: 600px) {
+            .email-container {
+                width: 100% !important;
+                padding: 10px !important;
+            }
+            .email-body {
+                padding: 20px !important;
+            }
+            .logo {
+                height: 32px !important;
+            }
+            .hero-title {
+                font-size: 24px !important;
+                line-height: 1.3 !important;
+            }
+            .cta-button {
+                padding: 14px 28px !important;
+                font-size: 16px !important;
+            }
+        }
+    </style>
+</head>
+<body style="margin: 0; padding: 0; background-color: #f8fafc; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;">
+    <!--[if mso | IE]>
+    <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%">
+    <tr>
+    <td>
+    <![endif]-->
+    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" class="email-container" style="background-color: #f8fafc;">
+        <tr>
+            <td style="padding: 40px 20px;">
+                <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="max-width: 600px; margin: 0 auto;" class="email-body">
+                    <tr>
+                        <td style="background-color: #ffffff; border-radius: 12px; box-shadow: 0 4px 25px rgba(0, 0, 0, 0.08); overflow: hidden;">
+                            <!-- Header with gradient -->
+                            <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+                                <tr>
+                                    <td style="background: linear-gradient(135deg, #2a4379 25%, #2769f5 100%); padding: 32px 40px; text-align: center;">
+                                        <img src="https://grvt.cc/assets/logo.png" alt="GRVT MES" class="logo" style="height: 40px; width: auto; display: block; margin: 0 auto;" />
+                                    </td>
+                                </tr>
+                            </table>
+                            <!-- Main content -->
+                            <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+                                <tr>
+                                    <td style="padding: 48px 40px;">
+                                        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+                                            <tr>
+                                                <td style="text-align: center; padding-bottom: 32px;">
+                                                    <h1 class="hero-title" style="margin: 0 0 16px 0; font-size: 28px; font-weight: 700; color: #1f2937; line-height: 1.2;">
+                                                        New Support Ticket Created
+                                                    </h1>
+                                                    <p class="text-secondary" style="margin: 0; font-size: 18px; color: #6b7280; line-height: 1.5;">
+                                                        Hi Team,<br>
+                                                        A new support ticket has been submitted and requires attention.<br><br>
+                                                        <strong>Ticket Details:</strong><br>
+                                                        <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin: 16px auto 0 auto; font-size: 16px; color: #374151;">
+                                                            <tr><td style="padding: 4px 0;"><strong>Ticket Number:</strong></td><td style="padding: 4px 0;">{{ticketNumber}}</td></tr>
+                                                            <tr><td style="padding: 4px 0;"><strong>Submitted By:</strong></td><td style="padding: 4px 0;">{{email}} {{#if name}} ({{name}}) {{/if}}</td></tr>
+                                                            <tr><td style="padding: 4px 0;"><strong>Subject:</strong></td><td style="padding: 4px 0;">{{subject}}</td></tr>
+                                                            <tr><td style="padding: 4px 0;"><strong>Message:</strong></td><td style="padding: 4px 0;">{{message}}</td></tr>
+                                                            <tr><td style="padding: 4px 0;"><strong>Submitted At:</strong></td><td style="padding: 4px 0;">{{createdAt}}</td></tr>
+                                                            <tr><td style="padding: 4px 0;"><strong>IP Address:</strong></td><td style="padding: 4px 0;">{{ipAddress}}</td></tr>
+                                                        </table>
+                                                        <br>
+                                                        Please review and take appropriate action in less than 48 hours.
+                                                    </p>
+                                                </td>
+                                            </tr>
+                                        </table>
+                                        <!-- Divider -->
+                                        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+                                            <tr>
+                                                <td style="padding: 24px 0;">
+                                                    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+                                                        <tr>
+                                                            <td style="border-top: 1px solid #e5e7eb; font-size: 1px; line-height: 1px;">&nbsp;</td>
+                                                        </tr>
+                                                    </table>
+                                                    <p style="text-align: center; margin: 16px 0 0 0; font-size: 14px; color: #9ca3af; font-weight: 500;">
+                                                        If you have any questions, please reach out to our support team.
+                                                    </p>
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                            </table>
+                            <!-- Footer -->
+                            <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+                                <tr>
+                                    <td style="background-color: #f9fafb; padding: 32px 40px; border-top: 1px solid #e5e7eb;">
+                                        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+                                            <tr>
+                                                <td style="text-align: center; padding-bottom: 20px;">
+                                                    <h3 style="margin: 0 0 12px 0; font-size: 16px; font-weight: 600; color: #374151;">
+                                                        Need Help?
+                                                    </h3>
+                                                    <p style="margin: 0 0 16px 0; font-size: 14px; color: #6b7280; line-height: 1.5;">
+                                                        Our support team is here to assist you with any ticket or account issues.
+                                                    </p>
+                                                    <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin: 0 auto;">
+                                                        <tr>
+                                                            <td style="padding: 0 8px;">
+                                                                <a href="mailto:support@dannie.cc" style="color: #2769f5; text-decoration: none; font-weight: 600; font-size: 14px;">
+                                                                    support@dannie.cc
+                                                                </a>
+                                                            </td>
+                                                            <td style="color: #d1d5db; font-size: 14px;">|</td>
+                                                            <td style="padding: 0 8px;">
+                                                                <a href="tel:+902422771777" style="color: #2769f5; text-decoration: none; font-weight: 600; font-size: 14px;">
+                                                                    +90 (242) 277 17 77
+                                                                </a>
+                                                            </td>
+                                                        </tr>
+                                                    </table>
+                                                </td>
+                                            </tr>
+                                        </table>
+                                        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+                                            <tr>
+                                                <td style="text-align: center; border-top: 1px solid #e5e7eb; padding-top: 20px;">
+                                                    <p style="margin: 0; font-size: 12px; color: #9ca3af; line-height: 1.5;">
+                                                        <strong>Dannie CC</strong><br>
+                                                        Yenigöl Mah. Orkide Sok. 44A, Muratpaşa<br>
+                                                        07230 Antalya, Türkiye
+                                                    </p>
+                                                    <p style="margin: 8px 0 0 0; font-size: 11px; color: #9ca3af;">
+                                                        ©2025 Dannie CC. All rights reserved.
+                                                    </p>
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+    <!--[if mso | IE]>
+    </td>
+    </tr>
+    </table>
+    <![endif]-->
+</body>
+</html>

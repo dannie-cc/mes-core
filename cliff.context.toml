@@ -1,0 +1,48 @@
+# git-cliff ~ context-only configuration (no remote calls)
+# Used for generating JSON context for the UI without querying GitLab/GitHub APIs
+
+[git]
+conventional_commits = true
+filter_unconventional = false
+split_commits = false
+protect_breaking_commits = true
+filter_commits = false
+# Do not restrict by tags to support repositories without semver tags
+tag_pattern = ".*"
+skip_tags = ""
+ignore_tags = ""
+topo_order = false
+sort_commits = "oldest"
+
+# Keep the same grouping used by the UI/frontend config
+commit_parsers = [
+    { message = "^feat", group = "<!-- 0 -->🏔️ Features" },
+    { message = "^fix", group = "<!-- 1 -->🐛 Bug Fixes" },
+    { message = "^doc", group = "<!-- 2 -->📚 Documentation" },
+    { message = "^perf", group = "<!-- 3 -->🚀 Performance" },
+    { message = "^refactor", group = "<!-- 4 -->🚜 Refactor" },
+    { message = "^style", group = "<!-- 5 -->🎨 Styling" },
+    { message = "^test", group = "<!-- 6 -->🧪 Testing" },
+    { message = "^build|^deps", group = "<!-- 7 -->📦 Build & Dependencies" },
+    { message = "^ci", group = "<!-- 8 -->🔧 CI/CD" },
+    { message = "^security", group = "<!-- 0 -->🔒 Security" },
+    { message = "^revert", group = "<!-- 9 -->◀️ Revert" },
+    # Skip noisy chores
+    { message = "^chore\\(deps.*\\)", skip = true },
+    { message = "^chore\\(pr\\)", skip = true },
+    { message = "^chore\\(pull\\)", skip = true },
+    { message = "^chore\\(release\\): prepare for", skip = true },
+    { message = "^chore", group = "<!-- 10 -->⚙️ Miscellaneous Tasks" },
+    # Fallback
+    { message = ".*", group = "<!-- 99 -->♻️ Other" },
+]
+
+[changelog]
+body = "{{ body }}"  # Include commit body (PR description)
+
+# Link parsers are OK here (no network), they just annotate context
+link_parsers = [
+    { pattern = "#(\\d+)", href = "https://gitlab.dannie.com.tr/dannie-mes/mes-platform/-/issues/$1" },
+    { pattern = "!(\\d+)", href = "https://gitlab.dannie.com.tr/dannie-mes/mes-platform/-/merge_requests/$1" },
+    { pattern = "RFC(\\d+)", text = "ietf-rfc$1", href = "https://datatracker.ietf.org/doc/html/rfc$1" },
+]

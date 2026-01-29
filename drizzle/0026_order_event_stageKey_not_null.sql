@@ -1,0 +1,1 @@
+ALTER TABLE "order_events" ALTER COLUMN "stage_key" DROP NOT NULL;

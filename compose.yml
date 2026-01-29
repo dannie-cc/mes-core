@@ -1,0 +1,96 @@
+services:
+  # api:
+  #   container_name: mes-api
+  #   env_file:
+  #     - .env.local
+  #   build:
+  #     context: .
+  #     # NOTE: change Containerfile based on environment (dev / prod)
+  #     dockerfile: Containerfile.dev
+  #   ports:
+  #     - "4000:4000"
+  #   environment:
+  #     - NODE_ENV=${NODE_ENV}
+  #   depends_on:
+  #     postgres:
+  #       condition: service_healthy
+  #     redis:
+  #       condition: service_healthy
+  #   volumes:
+  #     - ./logs:/app/logs
+  #   networks:
+  #     - dannie-network
+  #   restart: unless-stopped
+
+  postgres:
+    image: postgres:15-alpine
+    container_name: mes-postgres
+    restart: unless-stopped
+    ports:
+      - "${POSTGRES_PORT}:5432"
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - dannie-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: mes-redis
+    ports:
+      - "${REDIS_PORT}:6379"
+    command: redis-server --requirepass ${REDIS_PASSWORD:-""}
+    volumes:
+      - redis_data:/data
+    networks:
+      - dannie-network
+    healthcheck:
+      test: redis-cli ping || exit 1
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  minio:
+    image: minio/minio:latest
+    container_name: mes-minio
+    restart: unless-stopped
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ACCESS_KEY}
+      MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY}
+    volumes:
+      - minio_data:/data
+      - ./scripts/minio-init.sh:/usr/local/bin/minio-init.sh:ro
+    networks:
+      - dannie-network
+    entrypoint: >
+      /bin/sh -c "
+      apk add --no-cache curl &
+      /usr/local/bin/minio-init.sh &
+      exec minio server /data --console-address ':9001'
+      "
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+
+volumes:
+  redis_data:
+  postgres_data:
+  minio_data:
+
+networks:
+  dannie-network:
+    driver: bridge

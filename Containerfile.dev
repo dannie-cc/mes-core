@@ -1,0 +1,25 @@
+FROM node:lts-alpine
+
+# Install development tools
+RUN apk add --no-cache \
+    git \
+    bash \
+    && rm -rf /var/cache/apk/*
+
+WORKDIR /app
+
+# Install global dependencies
+RUN npm install -g pnpm @nestjs/cli
+
+# Copy package files and install dependencies
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+RUN pnpm install
+
+# Copy source code
+COPY . .
+
+EXPOSE 4000
+ENV NODE_ENV=development
+
+# dev environment to replicate prod behavior
+CMD ["/bin/bash", "-c", "pnpm start"]

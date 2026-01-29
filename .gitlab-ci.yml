@@ -1,0 +1,189 @@
+stages:
+  - build_app
+  - build_image
+  - deploy
+
+variables:
+  # All stages should use a dedicated artifacts directory to pass files between stages.
+  # Artifacts must be collected and accessed relative to ${CI_PROJECT_DIR}.
+  BUILD_APP_ARTIFACTS_DIR: 'artifacts/build_app'
+  BUILD_IMAGE_ARTIFACTS_DIR: 'artifacts/build_image'
+  PUSH_IMAGE_TMP_DIR: 'tmp/push_image'
+  IMAGE_TAGGED_SHA: '${CI_REGISTRY_IMAGE}:${CI_COMMIT_SHA}'
+  IMAGE_TAGGED_LATEST: '${CI_REGISTRY_IMAGE}:latest'
+  # Do not use CI_JOB_ID in artifacts, as they are incremented between stages
+  BACKEND_COMPRESSED_NAME: '${CI_PROJECT_NAME}-${CI_PIPELINE_IID}-backend.tgz'
+  IMAGE_TARBALL_NAME: '${CI_PROJECT_NAME}-${CI_PIPELINE_IID}-image-export.tar'
+  IMAGE_COMPRESSED_NAME: '${CI_PROJECT_NAME}-${CI_PIPELINE_IID}-image-export.tgz'
+  # Deployments variables
+  SERVICE_DEV: 'mes-dev'
+  SERVICE_PROD: 'mes-prod'
+  # Ensure full Git history for git-cliff
+  GIT_STRATEGY: fetch
+  GIT_DEPTH: 0
+
+build_app:
+  tags:
+    - dev_mes
+  stage: build_app
+  dependencies: []
+  needs: []
+  cache:
+    key: ${CI_COMMIT_REF_SLUG}
+    paths:
+      - .pnpm-store
+  # rules:
+  #   - changes:
+  #       - /assets
+  #       - /src
+  #       - /test
+  #       - /.npmrc
+  #       - /package.json
+  #       - /pnpm-lock.yaml
+  #       - /pnpm-workspace.yaml
+  #       - /tsconfig.json
+  #       - /tsconfig.test.json
+  script:
+    - mkdir -p .pnpm-store
+    # Build Node project (install deps, generate changelog non-blocking, build)
+    - podman run --rm -v ./:/app -v $CI_PROJECT_DIR/.pnpm-store:/root/.pnpm-store -w /app --entrypoint /bin/sh node:lts-slim -c "apt-get update && apt-get install -y git && git config --global --add safe.directory /app && npm install -g pnpm @nestjs/cli && pnpm install --store /root/.pnpm-store && (pnpm changelog:generate || true) && pnpm build"
+    # Create the artifact only if build_image will be triggered
+    - |
+      if [ "${CI_COMMIT_REF_PROTECTED}" = "true" ]; then
+        mkdir -p "${CI_PROJECT_DIR}/${BUILD_APP_ARTIFACTS_DIR}/"
+      tar -czf "${CI_PROJECT_DIR}/${BUILD_APP_ARTIFACTS_DIR}/${BACKEND_COMPRESSED_NAME}" node_modules/ dist/ assets/
+      else
+        echo "non-protected branch: skipping artifact"
+        mkdir -p "${CI_PROJECT_DIR}/${BUILD_APP_ARTIFACTS_DIR}/"
+        touch "${CI_PROJECT_DIR}/${BUILD_APP_ARTIFACTS_DIR}/.keep"
+      fi
+  artifacts:
+    expire_in: 1 hour
+    paths:
+      - '${BUILD_APP_ARTIFACTS_DIR}'
+
+build_image:
+  tags:
+    - dev_mes
+  stage: build_image
+  needs:
+    - job: build_app
+      artifacts: true
+  rules:
+    - if: '$CI_COMMIT_REF_PROTECTED == "true"'
+      when: on_success
+    - when: never
+  script:
+    # Extract artifact into repository
+    - tar -xzf "${CI_PROJECT_DIR}/${BUILD_APP_ARTIFACTS_DIR}/${BACKEND_COMPRESSED_NAME}" -C "${CI_PROJECT_DIR}"
+    - |
+      if [ "${CI_COMMIT_BRANCH}" = "main" ]; then
+        podman build --no-cache -f Containerfile.prod -t "${IMAGE_TAGGED_SHA}" .
+      else
+        podman build --no-cache -f Containerfile.dev -t "${IMAGE_TAGGED_SHA}" .
+      fi
+    - podman save --output "${IMAGE_TARBALL_NAME}" "${IMAGE_TAGGED_SHA}"
+    # Push image
+    - podman login --username "${CI_REGISTRY_USER}" --password "${CI_REGISTRY_PASSWORD}" "${CI_REGISTRY}"
+    - podman push "${IMAGE_TAGGED_SHA}"
+    - |
+      if [ "${CI_COMMIT_BRANCH}" == 'main' ]; then
+        podman tag "${IMAGE_TAGGED_SHA}" "${IMAGE_TAGGED_LATEST}"
+        podman push "${IMAGE_TAGGED_LATEST}"
+        podman rmi "${IMAGE_TAGGED_LATEST}"
+      fi
+    - podman rmi "${IMAGE_TAGGED_SHA}"
+    # Clean up dangling images and old versions (with error handling)
+    - echo "Cleaning up dangling images..."
+    - podman image prune -f || echo "Warning - Could not prune some images"
+    - echo "Cleaning up old images (keeping 5 most recent)..."
+    - |
+      # List current images for this repository
+      echo "Current images before cleanup:"
+      podman images --filter "reference=${CI_REGISTRY_IMAGE}" --sort created --format "table {{.Repository}}\t{{.Tag}}\t{{.ID}}\t{{.CreatedAt}}" || true
+
+      # Get image IDs to remove (keep 5 most recent, never remove latest)
+      old_images=$(podman images --filter "reference=${CI_REGISTRY_IMAGE}" --sort created --format "{{.ID}}\t{{.Tag}}" | \
+                   grep -v "latest" | \
+                   tail -n +6 | \
+                   cut -f1 || true)
+
+      if [ -n "$old_images" ]; then
+        echo "Found old images to remove:"
+        echo "$old_images"
+        for image_id in $old_images; do
+          if [ -n "$image_id" ]; then
+            echo "Attempting to remove: $image_id"
+            podman rmi "$image_id" 2>&1 || echo "Could not remove $image_id (may be in use or already removed)"
+          fi
+        done
+      else
+        echo "No old images to remove (keeping latest and 5 most recent)"
+      fi
+    # Clean up extracted artifacts to prevent cleanup errors
+    - rm -rf "${CI_PROJECT_DIR}/${BUILD_APP_ARTIFACTS_DIR}" || true
+
+.deploy:
+  stage: deploy
+  needs:
+    - job: build_image
+      artifacts: false
+  before_script:
+    - podman login --username "${CI_REGISTRY_USER}" --password "${CI_REGISTRY_PASSWORD}" "${CI_REGISTRY}"
+    - podman pull "${CI_REGISTRY_IMAGE}:${CI_COMMIT_SHA}"
+  script:
+    - systemctl --user daemon-reload # Ensure systemd unit file changes are accounted for in user space
+    - sudo mkdir -p "/srv/podman/${USER}/${PODMAN_SERVICE}"
+    - sudo /usr/local/bin/podman-compose-service.sh stop "${USER}" "${PODMAN_SERVICE}" || true
+    # Update service directory with environment-specific compose file
+    - |
+      if [ "${CI_COMMIT_BRANCH}" == "main" ]; then
+        sudo cp "${CI_PROJECT_DIR}/compose.prod.yml" "/srv/podman/${USER}/${PODMAN_SERVICE}/compose.yml"
+      else
+        sudo cp "${CI_PROJECT_DIR}/compose.dev.yml" "/srv/podman/${USER}/${PODMAN_SERVICE}/compose.yml"
+      fi
+    - cd "/srv/podman/${USER}/${PODMAN_SERVICE}"
+    # Use existing .env file as single source of truth, update CI variables
+    - sudo sed -i '/^CI_REGISTRY_IMAGE=/d' .env || true
+    - sudo sed -i '/^CI_COMMIT_SHA=/d' .env || true
+    - echo "CI_REGISTRY_IMAGE=${CI_REGISTRY_IMAGE}" | sudo tee -a .env
+    - echo "CI_COMMIT_SHA=${CI_COMMIT_SHA}" | sudo tee -a .env
+    # Run database migrations based on environment. Create an one-shot container to run migrations.
+    # - |
+    #     if [ "${CI_COMMIT_BRANCH}" == "dev" ]; then
+    #       podman run --rm --env-file .env --network host "${CI_REGISTRY_IMAGE}:${CI_COMMIT_SHA}" pnpm db:init
+    #     else
+    #       podman run --rm --env-file .env --network host "${CI_REGISTRY_IMAGE}:${CI_COMMIT_SHA}" pnpm db:migrate
+    #     fi
+    # Start service and enable
+    - sudo /usr/local/bin/podman-compose-service.sh start "${USER}" "${PODMAN_SERVICE}"
+    - sudo /usr/local/bin/podman-compose-service.sh enable "${USER}" "${PODMAN_SERVICE}"
+  artifacts: {}
+
+.deploy_dev:
+  extends: .deploy
+  rules:
+    - if: '$CI_COMMIT_REF_PROTECTED == "true" && $CI_COMMIT_BRANCH == "dev"'
+      when: on_success
+    - when: never
+  variables:
+    PODMAN_SERVICE: '${SERVICE_DEV}'
+
+deploy_dev:
+  extends: .deploy_dev
+  tags:
+    - dev_mes
+
+.deploy_prod:
+  extends: .deploy
+  rules:
+    - if: '$CI_COMMIT_REF_PROTECTED == "true" && $CI_COMMIT_BRANCH == "main"'
+      when: on_success
+    - when: never
+  variables:
+    PODMAN_SERVICE: '${SERVICE_PROD}'
+
+deploy_prod:
+  extends: .deploy_prod
+  tags:
+    - dev_mes

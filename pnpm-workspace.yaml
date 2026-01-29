@@ -1,0 +1,8 @@
+ignoredBuiltDependencies:
+  - '@swc/core'
+
+onlyBuiltDependencies:
+  - '@nestjs/core'
+  - '@scarf/scarf'
+  - bcrypt
+  - esbuild

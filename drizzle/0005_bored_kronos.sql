@@ -1,0 +1,1 @@
+ALTER TABLE "tickets" ALTER COLUMN "last_message_at" DROP DEFAULT;
