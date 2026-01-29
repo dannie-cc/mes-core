@@ -26,7 +26,7 @@ async function bootstrap() {
         const { host, port } = configuration.server;
         const { url: clientUrl } = configuration.client;
 
-        const excludePaths = ['/health'];
+        const excludePaths = ['/health', '/health/ready', '/health/detailed'];
         if (configuration.environment === ENVIRONMENT.DEVELOPMENT) {
             excludePaths.push('/docs', '/docs-json');
         }

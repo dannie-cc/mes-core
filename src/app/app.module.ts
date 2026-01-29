@@ -1,28 +1,33 @@
+import { ZodSerializerInterceptor } from 'nestjs-zod';
+import { Module, MiddlewareConsumer, NestModule } from '@nestjs/common';
+import { EventEmitterModule } from '@nestjs/event-emitter';
+import { ScheduleModule } from '@nestjs/schedule';
 import { APP_INTERCEPTOR } from '@nestjs/core';
 import { ConfigModule } from '@nestjs/config';
-import { Module, MiddlewareConsumer, NestModule } from '@nestjs/common';
-import { ZodSerializerInterceptor } from 'nestjs-zod';
+
 import { RedisModule } from './services/redis/redis.module';
 import { AssetsModule } from './services/assets/assets.module';
-import { LoggingInterceptor } from './services/logger/logger.interceptor';
 import { LoggerModule } from './services/logger/logger.module';
+import { MailModule } from './services/mail/mail.module';
+
+import { LoggingInterceptor } from './services/logger/logger.interceptor';
+import { ResponseInterceptor } from '@/common/interceptors/response.interceptor';
+import { SecurityHeadersMiddleware } from '@/common/middleware/security-headers.middleware';
+
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { EventEmitterModule } from '@nestjs/event-emitter';
+import { databaseConfig, redisConfig, serverConfig } from '@/config';
+import { PermissionSeederService } from '@/models/seeder/permission-seeder.service';
+
 import { AttachmentModule } from '@/modules/attachments/attachment.module';
 import { AuthModule } from '@/modules/auth/auth.module';
 import { UsersModule } from '@/modules/users/users.module';
-import { SecurityHeadersMiddleware } from '@/common/middleware/security-headers.middleware';
 import { TicketModule } from '@/modules/ticket/ticket.module';
 import { BomModule } from '@/modules/bom/bom.module';
 import { WorkOrderModule } from '@/modules/work-order/work-order.module';
-import { ResponseInterceptor } from '@/common/interceptors/response.interceptor';
-import { databaseConfig, redisConfig, serverConfig } from '@/config';
-import { MailModule } from './services/mail/mail.module';
 import { RolesModule } from '@/modules/roles/roles.module';
-import { ScheduleModule } from '@nestjs/schedule';
 import { UserAddressesModule } from '@/modules/user-addresses/user-addresses.module';
-import { PermissionSeederService } from '@/models/seeder/permission-seeder.service';
+import { HealthModule } from '@/health/health.module';
 
 @Module({
     imports: [
@@ -44,6 +49,7 @@ import { PermissionSeederService } from '@/models/seeder/permission-seeder.servi
         BomModule,
         WorkOrderModule,
         RolesModule,
+        HealthModule,
     ],
     controllers: [AppController],
     providers: [
