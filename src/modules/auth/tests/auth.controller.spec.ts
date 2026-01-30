@@ -1,12 +1,14 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { AuthController } from '../auth.controller';
-import { AuthService } from '../auth.service';
-import { CustomLoggerService } from '@/app/services/logger/logger.service';
 import { InternalServerErrorException, NotFoundException } from '@nestjs/common';
-import { JwtAuthGuard } from '../guards/jwt-auth.guard';
-import { RateLimitGuard } from '../guards/rate-limit.guard';
+import { Test, TestingModule } from '@nestjs/testing';
+
+import { CustomLoggerService } from '@/app/services/logger/logger.service';
 import { RedisService } from '@/app/services/redis/redis.service';
 import { JwtUser } from '@/types/jwt.types';
+
+import { AuthController } from '../auth.controller';
+import { AuthService } from '../auth.service';
+import { JwtAuthGuard } from '../guards/jwt-auth.guard';
+import { RateLimitGuard } from '../guards/rate-limit.guard';
 
 describe('AuthController', () => {
     let controller: AuthController;
@@ -55,7 +57,7 @@ describe('AuthController', () => {
 
     describe('signup', () => {
         it('should call signup and return result', async () => {
-            const dto = { email: 'test@example.com', password: '123', confirmPassword: '123', firstName: 'A', lastName: 'B', sendMail: false, acceptTerms: true, factoryName: 'Test Factory' };
+            const dto = { email: 'test@example.com', password: '123', firstName: 'A', lastName: 'B', sendMail: false, acceptTerms: true, factoryName: 'Test Factory' };
             const mockResult = { success: true, data: { accessToken: 'token', email: dto.email } };
 
             mockAuthService.signup.mockResolvedValue(mockResult);
@@ -67,7 +69,7 @@ describe('AuthController', () => {
         });
 
         it('Should throw if required fields are missing .', async () => {
-            const dto = { email: '', password: '', confirmPassword: '', firstName: 'A', lastName: 'B', sendMail: false, acceptTerms: true, factoryName: '' };
+            const dto = { email: '', password: '', firstName: 'A', lastName: 'B', sendMail: false, acceptTerms: true, factoryName: '' };
             // const mockResult = { success: false, message: 'Invalid credentials' };
 
             // const result = await controller.signup(dto);

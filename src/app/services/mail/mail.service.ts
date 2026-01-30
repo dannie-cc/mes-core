@@ -143,7 +143,7 @@ export class MailService {
             });
             const mailData: ISendMail = {
                 to: email,
-                subject: 'Verify Your Email - Dannie PCB',
+                subject: 'Verify Your Email - GRVT MES',
                 html: htmlContent,
             };
 
@@ -186,7 +186,7 @@ export class MailService {
             });
             const mailData: ISendMail = {
                 to: email,
-                subject: 'Reset Your Password - Dannie PCB',
+                subject: 'Reset Your Password - GRVT MES',
                 html: htmlContent,
             };
 
@@ -221,7 +221,7 @@ export class MailService {
             });
             const mailData: ISendMail = {
                 to: email,
-                subject: `We have Received Your Request - Ticket #${ticketNumber} - Dannie PCB`,
+                subject: `We have Received Your Request - Ticket #${ticketNumber} - GRVT MES`,
                 html: htmlContent,
             };
 
@@ -256,7 +256,7 @@ export class MailService {
             const htmlContent = this.fillTemplate(EMAIL_TEMPLATE.ORDER_STATUS, { baseUrl, name, email, ...orderDetails });
             const mailData: ISendMail = {
                 to: email,
-                subject: 'Update on Your Order Status - Dannie PCB',
+                subject: 'Update on Your Order Status - GRVT MES',
                 html: htmlContent,
             };
 

@@ -1,11 +1,13 @@
-import { AuthService } from '../auth.service';
-import { UsersService } from '../../users/users.service';
-import { Test, TestingModule } from '@nestjs/testing';
+import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
+import { Test, TestingModule } from '@nestjs/testing';
+
 import { CustomLoggerService } from '@/app/services/logger/logger.service';
 import { MailService } from '@/app/services/mail/mail.service';
 import { RedisService } from '@/app/services/redis/redis.service';
-import { ConfigService } from '@nestjs/config';
+
+import { UsersService } from '../../users/users.service';
+import { AuthService } from '../auth.service';
 
 describe('AuthService', () => {
     let service: AuthService;
@@ -88,7 +90,6 @@ describe('AuthService', () => {
             const signupDto = {
                 email: 'test@example.com',
                 password: 'password123',
-                confirmPassword: 'password123',
                 firstName: 'A',
                 lastName: 'B',
                 sendMail: false,
@@ -107,7 +108,7 @@ describe('AuthService', () => {
                 deletedAt: null,
                 verificationToken: 'verificationToken123',
                 isVerified: true,
-                roleId: "test-role-id",
+                roleId: 'test-role-id',
                 factoryId: 'factory-1',
             });
 
@@ -125,7 +126,6 @@ describe('AuthService', () => {
             const signupDto = {
                 email: 'test@example.com',
                 password: 'password123',
-                confirmPassword: 'password123',
                 firstName: 'John',
                 lastName: 'Doe',
                 sendMail: true,
@@ -146,7 +146,7 @@ describe('AuthService', () => {
                 deletedAt: null,
                 verificationToken,
                 isVerified: false,
-                roleId: "test-role-id",
+                roleId: 'test-role-id',
                 factoryId: 'factory-1',
             });
 
@@ -162,7 +162,6 @@ describe('AuthService', () => {
             const signupDto = {
                 email: 'success@example.com',
                 password: 'password123',
-                confirmPassword: 'password123',
                 firstName: 'Test',
                 lastName: 'User',
                 sendMail: false,
@@ -181,7 +180,7 @@ describe('AuthService', () => {
                 deletedAt: null,
                 verificationToken: 'verificationToken789',
                 isVerified: false,
-                roleId: "test-role-id",
+                roleId: 'test-role-id',
                 factoryId: 'factory-1',
             });
 
@@ -197,7 +196,6 @@ describe('AuthService', () => {
             const signupDto = {
                 email: 'test2@example.com',
                 password: 'password123',
-                confirmPassword: 'password123',
                 firstName: 'Jane',
                 lastName: 'Doe',
                 sendMail: false,
@@ -216,7 +214,7 @@ describe('AuthService', () => {
                 deletedAt: null,
                 verificationToken: 'verificationToken456',
                 isVerified: false,
-                roleId: "test-role-id",
+                roleId: 'test-role-id',
                 factoryId: 'factory-1',
             });
 
@@ -276,7 +274,6 @@ describe('AuthService', () => {
             const signupDto = {
                 email: 'success@example.com',
                 password: 'password123',
-                confirmPassword: 'password123',
                 firstName: 'Test',
                 lastName: 'User',
                 sendMail: false,
@@ -295,7 +292,7 @@ describe('AuthService', () => {
                 deletedAt: null,
                 verificationToken: 'verificationToken789',
                 isVerified: false,
-                roleId: "test-role-id",
+                roleId: 'test-role-id',
                 factoryId: 'factory-1',
             });
 
@@ -311,7 +308,6 @@ describe('AuthService', () => {
             const signupDto = {
                 email: 'test2@example.com',
                 password: 'password123',
-                confirmPassword: 'password123',
                 firstName: 'Jane',
                 lastName: 'Doe',
                 sendMail: false,
@@ -330,7 +326,7 @@ describe('AuthService', () => {
                 deletedAt: null,
                 verificationToken: 'verificationToken456',
                 isVerified: false,
-                roleId: "test-role-id",
+                roleId: 'test-role-id',
                 factoryId: 'factory-1',
             });
 
@@ -377,7 +373,7 @@ describe('AuthService', () => {
                 deletedAt: null,
                 verificationToken: 'token',
                 isVerified: true,
-                roleId: "test-role-id",
+                roleId: 'test-role-id',
                 factoryId: 'factory-1',
             };
 
@@ -444,7 +440,6 @@ describe('AuthService', () => {
         const changePasswordDto = {
             oldPassword: 'currentPassword',
             newPassword: 'newPassword123!',
-            confirmPassword: 'newPassword123!',
         };
 
         beforeEach(() => {
@@ -487,10 +482,7 @@ describe('AuthService', () => {
         });
 
         it('should throw error if password confirmation does not match', async () => {
-            const invalidDto = {
-                ...changePasswordDto,
-                confirmPassword: 'differentPassword',
-            };
+            const invalidDto = changePasswordDto;
 
             await expect(service.changePassword('user-123', 'test@example.com', invalidDto)).rejects.toThrow('New password and confirmation password do not match.');
         });

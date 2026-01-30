@@ -42,7 +42,7 @@ body = "{{ body }}"  # Include commit body (PR description)
 
 # Link parsers are OK here (no network), they just annotate context
 link_parsers = [
-    { pattern = "#(\\d+)", href = "https://gitlab.dannie.com.tr/dannie-mes/mes-platform/-/issues/$1" },
-    { pattern = "!(\\d+)", href = "https://gitlab.dannie.com.tr/dannie-mes/mes-platform/-/merge_requests/$1" },
+    { pattern = "#(\\d+)", href = "https://github.com/dannie-cc/mes-core/issues/$1" },
+    { pattern = "!(\\d+)", href = "https://github.com/dannie-cc/mes-core/pull/$1" },
     { pattern = "RFC(\\d+)", text = "ietf-rfc$1", href = "https://datatracker.ietf.org/doc/html/rfc$1" },
 ]

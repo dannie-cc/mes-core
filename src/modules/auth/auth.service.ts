@@ -1,30 +1,20 @@
-import {
-    BadRequestException,
-    ConflictException,
-    Injectable,
-    NotFoundException,
-    NotImplementedException,
-    PreconditionFailedException,
-    UnauthorizedException,
-} from '@nestjs/common';
+import * as crypto from 'crypto';
+import { BadRequestException, ConflictException, Injectable, NotFoundException, NotImplementedException, PreconditionFailedException, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import bcrypt from 'bcrypt';
-import * as crypto from 'crypto';
 
-import { SignupDto, LoginDto, ChangePasswordDto, ForgotPasswordDto, ResetPasswordDto, ValidateResetCodeDto } from './auth.dto';
-
-import { UsersService } from '../users/users.service';
-import { RedisService } from '@/app/services/redis/redis.service';
 import { CustomLoggerService } from '@/app/services/logger/logger.service';
 import { MailService } from '@/app/services/mail/mail.service';
-
-import { type UserSelectOutput } from '@/models/zod-schemas';
-import { EXPIRE_TIMESTAMP, RESET_TOKEN_EXPIRY, OTP_LENGTH, VERIFICATION_MAX_ATTEMPT_LIMIT, VERIFICATION_MAX_ATTEMPT_LIMIT_EXPIRY } from '@/common/constants';
-
-import { RandomStringGenerator } from '@/utils/random';
-import { RolesService } from '../roles/roles.service';
-import * as Schema from '@/models/schema';
+import { RedisService } from '@/app/services/redis/redis.service';
+import { EXPIRE_TIMESTAMP, OTP_LENGTH, RESET_TOKEN_EXPIRY, VERIFICATION_MAX_ATTEMPT_LIMIT, VERIFICATION_MAX_ATTEMPT_LIMIT_EXPIRY } from '@/common/constants';
 import { DrizzleService } from '@/models/model.service';
+import * as Schema from '@/models/schema';
+import { type UserSelectOutput } from '@/models/zod-schemas';
+import { RandomStringGenerator } from '@/utils/random';
+
+import { RolesService } from '../roles/roles.service';
+import { UsersService } from '../users/users.service';
+import { ChangePasswordDto, ForgotPasswordDto, LoginDto, ResetPasswordDto, SignupDto, ValidateResetCodeDto } from './auth.dto';
 
 @Injectable()
 export class AuthService {
@@ -103,18 +93,27 @@ export class AuthService {
             const defaultRole = await this.rolesService.getDefault();
 
             const { userRecord, factoryRecord } = await this.db.transaction(async (tx) => {
-                const [f] = await tx.insert(Schema.factory).values({
-                    name: signupDto.factoryName,
-                }).returning();
+                const [f] = await tx
+                    .insert(Schema.factory)
+                    .values({
+                        name: signupDto.factoryName,
+                    })
+                    .returning();
 
-                const u = await this.usersService.create({
-                    ...signupDto,
-                    password: hashedPassword,
-                    verificationToken,
-                    isVerified: false,
-                    roleId: defaultRole.id,
-                    factoryId: f.id,
-                });
+                const { email, firstName, lastName } = signupDto;
+                const [u] = await tx
+                    .insert(Schema.user)
+                    .values({
+                        email,
+                        firstName,
+                        lastName,
+                        password: hashedPassword,
+                        verificationToken,
+                        isVerified: false,
+                        roleId: defaultRole.id,
+                        factoryId: f.id,
+                    })
+                    .returning();
 
                 return { userRecord: u, factoryRecord: f };
             });
@@ -253,16 +252,10 @@ export class AuthService {
     }
 
     async changePassword(userId: string, email: string, changePasswordDto: ChangePasswordDto) {
-        const { oldPassword, newPassword, confirmPassword } = changePasswordDto;
-
-        if (newPassword !== confirmPassword) {
-            throw new BadRequestException('New password and confirmation password do not match.');
-        }
+        const { oldPassword, newPassword } = changePasswordDto;
 
         const user = await this.usersService.findByEmail(email);
-        if (!user) {
-            throw new UnauthorizedException('User not found.');
-        }
+        if (!user) throw new UnauthorizedException('User not found.');
 
         const isCurrentPasswordValid = await bcrypt.compare(oldPassword, user.password);
         if (!isCurrentPasswordValid) {
@@ -272,9 +265,7 @@ export class AuthService {
         }
 
         const isSamePassword = await bcrypt.compare(newPassword, user.password);
-        if (isSamePassword) {
-            throw new BadRequestException('New password must be different from your current password.');
-        }
+        if (isSamePassword) throw new BadRequestException('New password must be different from your current password.');
 
         const hashedNewPassword = await bcrypt.hash(newPassword, 10);
 
@@ -412,18 +403,10 @@ export class AuthService {
 
     async resetPassword(resetPasswordDto: ResetPasswordDto) {
         const user = await this.usersService.findByEmail(resetPasswordDto.email);
-        if (!user) {
-            throw new NotFoundException('User with the given email does not exist.');
-        }
+        if (!user) throw new NotFoundException('User with the given email does not exist.');
 
-        if (resetPasswordDto.newPassword !== resetPasswordDto.confirmPassword) {
-            throw new BadRequestException('New password and confirm password do not match.');
-        }
         const verifyUserAndOtp = await this.verifyOTP(resetPasswordDto.code, resetPasswordDto.email, 'forgot-password');
-
-        if (!verifyUserAndOtp) {
-            throw new BadRequestException('The reset code is invalid or expired.');
-        }
+        if (!verifyUserAndOtp) throw new BadRequestException('The reset code is invalid or expired.');
 
         const hashedPassword = await bcrypt.hash(resetPasswordDto.newPassword, 10);
         await this.usersService.updateInternal(user.id, { password: hashedPassword });
@@ -434,32 +417,21 @@ export class AuthService {
         await this.redisService.del(`token:${user.id}`);
         await this.redisService.del(`otp:${user.id}`);
 
-        return {
-            message: 'Password has been reset successfully',
-        };
+        return { message: 'Password has been reset successfully' };
     }
 
     async verifyOTP(otp: string, email: string, type: string) {
         const user = await this.usersService.findByEmail(email);
-        if (!user) {
-            throw new NotFoundException('The reset code is invalid or expired.');
-        }
+        if (!user) throw new NotFoundException('The reset code is invalid or expired.');
+        if (!otp) throw new BadRequestException('Reset code is required.');
 
-        if (!otp) {
-            throw new BadRequestException('Reset code is required.');
-        }
+        if (!(type === 'forgot-password' && otp)) throw new NotImplementedException('This verification method is not supported.');
+        const otpKey = `otp:${user.id}`;
+        const storedCode = await this.redisService.get(otpKey);
+        // Constant-time comparison to prevent timing attacks
+        if (!storedCode || !this.constantTimeStringCompare(storedCode, otp)) throw new BadRequestException('The reset code is invalid or expired.');
 
-        if (type === 'forgot-password' && otp) {
-            const otpKey = `otp:${user.id}`;
-            const storedCode = await this.redisService.get(otpKey);
-            // Constant-time comparison to prevent timing attacks
-            if (!storedCode || !this.constantTimeStringCompare(storedCode, otp)) {
-                throw new BadRequestException('The reset code is invalid or expired.');
-            }
-            return true;
-        } else {
-            throw new NotImplementedException('This verification method is not supported.');
-        }
+        return true;
     }
 
     async checkEmailExist(email: string) {

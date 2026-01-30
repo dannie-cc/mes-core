@@ -1,12 +1,9 @@
-import { createStrictZodDto } from '@/common/helpers/zod-strict';
 import { z } from 'zod';
-import { userInsertSchema, publicUserSelectSchema, userSettingsSelectSchema } from '@/models/zod-schemas';
-import { createApiResponseDto } from '@/common/helpers/api-response';
-import { NAME_PATTERN, validateText } from '@/common/helpers/validations';
 
-const passwordRegex = { pattern: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/, error: 'Password must contain at least one uppercase letter, one lowercase letter, and one number' };
-const resetcodeRegex = { pattern: /^[0-9]{6}$/, error: 'Reset code must be 6 numeric characters' };
-const nameRegex = { pattern: NAME_PATTERN, error: 'name can only contain alphabets, spaces, apostrophes, or hyphens' };
+import { createApiResponseDto } from '@/common/helpers/api-response';
+import { nameRegex, passwordRegex, resetCodeRegex, validateText } from '@/common/helpers/validations';
+import { createStrictZodDto } from '@/common/helpers/zod-strict';
+import { publicUserSelectSchema, userInsertSchema, userSettingsSelectSchema } from '@/models/zod-schemas';
 
 //Input Schemas
 const signupSchema = userInsertSchema
@@ -23,17 +20,8 @@ const signupSchema = userInsertSchema
         firstName: validateText({ regex: nameRegex }),
         lastName: validateText({ regex: nameRegex }),
         factoryName: validateText({ min: 2, max: 100 }),
-        password: validateText({
-            regex: passwordRegex,
-            min: 8,
-            max: 50,
-        }),
-        confirmPassword: z.string(),
+        password: validateText({ regex: passwordRegex, min: 8, max: 50 }),
         sendMail: z.boolean().optional(),
-    })
-    .refine((data) => data.password === data.confirmPassword, {
-        message: 'Passwords do not match',
-        path: ['confirmPassword'],
     });
 
 const loginSchema = z.object({
@@ -55,35 +43,19 @@ const forgotPasswordSchema = z.object({
 
 const validateResetCodeSchema = z.object({
     email: z.email('Please enter a valid email address').transform((s) => s?.trim()?.toLowerCase()),
-    code: validateText({ regex: resetcodeRegex, min: 6, max: 6 }),
+    code: validateText({ regex: resetCodeRegex }),
 });
 
-const resetPasswordSchema = z
-    .object({
-        email: z.email('Please enter a valid email address').transform((s) => s?.trim()?.toLowerCase()),
-        code: z.string().regex(/^[0-9]{6}$/, 'Reset code must be 6 numeric characters'),
-        newPassword: validateText({
-            regex: passwordRegex,
-            min: 8,
-            max: 50,
-        }),
-        confirmPassword: z.string(),
-    })
-    .refine((data) => data.newPassword === data.confirmPassword, {
-        message: 'Passwords do not match',
-        path: ['confirmPassword'],
-    });
+const resetPasswordSchema = z.object({
+    email: z.email('Please enter a valid email address').transform((s) => s?.trim()?.toLowerCase()),
+    code: validateText({ regex: resetCodeRegex }),
+    newPassword: validateText({ regex: passwordRegex, min: 8, max: 50 }),
+});
 
-const changePasswordSchema = z
-    .object({
-        oldPassword: z.string().min(1, 'Current password is required'),
-        newPassword: validateText({ regex: passwordRegex, min: 8, max: 50 }),
-        confirmPassword: z.string(),
-    })
-    .refine((data) => data.newPassword === data.confirmPassword, {
-        message: 'Passwords do not match',
-        path: ['confirmPassword'],
-    });
+const changePasswordSchema = z.object({
+    oldPassword: validateText({ regex: passwordRegex }),
+    newPassword: validateText({ regex: passwordRegex, min: 8, max: 50 }),
+});
 
 const resendVerificationSchema = z.object({
     email: z.email('Please enter a valid email address').transform((s) => s?.trim()?.toLowerCase()),
@@ -120,19 +92,19 @@ const resendStatusResponseSchema = z.object({
 });
 
 // Input DTO's
-export class SignupDto extends createStrictZodDto(signupSchema) { }
-export class LoginDto extends createStrictZodDto(loginSchema) { }
-export class VerifyEmailDto extends createStrictZodDto(verifyEmailSchema) { }
-export class ForgotPasswordDto extends createStrictZodDto(forgotPasswordSchema) { }
-export class ValidateResetCodeDto extends createStrictZodDto(validateResetCodeSchema) { }
-export class ResetPasswordDto extends createStrictZodDto(resetPasswordSchema) { }
-export class ChangePasswordDto extends createStrictZodDto(changePasswordSchema) { }
-export class ResendVerificationDto extends createStrictZodDto(resendVerificationSchema) { }
+export class SignupDto extends createStrictZodDto(signupSchema) {}
+export class LoginDto extends createStrictZodDto(loginSchema) {}
+export class VerifyEmailDto extends createStrictZodDto(verifyEmailSchema) {}
+export class ForgotPasswordDto extends createStrictZodDto(forgotPasswordSchema) {}
+export class ValidateResetCodeDto extends createStrictZodDto(validateResetCodeSchema) {}
+export class ResetPasswordDto extends createStrictZodDto(resetPasswordSchema) {}
+export class ChangePasswordDto extends createStrictZodDto(changePasswordSchema) {}
+export class ResendVerificationDto extends createStrictZodDto(resendVerificationSchema) {}
 
 // API Response DTO's
-export class LoginApiResponseDto extends createApiResponseDto(loginResponseSchema) { }
-export class SignupApiResponseDto extends createApiResponseDto(signupResponseSchema) { }
-export class MessageApiResponseDto extends createApiResponseDto(messageResponseSchema) { }
-export class ValidateResetCodeApiResponseDto extends createApiResponseDto(validateResetCodeResponseSchema) { }
-export class ResendStatusApiResponseDto extends createApiResponseDto(resendStatusResponseSchema) { }
-export class LoginApiResponseWithSettingsDto extends createApiResponseDto(loginResponseWithSettingsSchema) { }
+export class LoginApiResponseDto extends createApiResponseDto(loginResponseSchema) {}
+export class SignupApiResponseDto extends createApiResponseDto(signupResponseSchema) {}
+export class MessageApiResponseDto extends createApiResponseDto(messageResponseSchema) {}
+export class ValidateResetCodeApiResponseDto extends createApiResponseDto(validateResetCodeResponseSchema) {}
+export class ResendStatusApiResponseDto extends createApiResponseDto(resendStatusResponseSchema) {}
+export class LoginApiResponseWithSettingsDto extends createApiResponseDto(loginResponseWithSettingsSchema) {}

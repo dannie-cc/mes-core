@@ -1,21 +1,18 @@
-import { createStrictZodDto } from '@/common/helpers/zod-strict';
 import { z } from 'zod';
-import { createApiPaginatedResponseSchema, createApiResponseSchema } from '@/common/helpers/api-response';
-import {
-    userUpdateSchema,
-    userSelectSchema,
-    publicUserSelectSchema,
-    type UserInsertInput,
-    type UserUpdateInput,
-    type UserSelectOutput,
-    type PublicUserOutput,
-} from '@/models/zod-schemas';
-import { NAME_PATTERN, validateText } from '@/common/helpers/validations';
 
-const resetcodeRegex = { pattern: /^[0-9]{6}$/, error: 'Reset code must be 6 numeric characters' };
-const passwordRegex = { pattern: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/, error: 'Password must contain at least one uppercase letter, one lowercase letter, and one number' };
-const phoneNumberRegex = { pattern: /^\+?[0-9\s\-()]{7,20}$/, error: 'Phone number must be 7–20 digits and may include spaces, hyphens, parentheses, and may start with +' };
-const nameRegex = { pattern: NAME_PATTERN, error: 'name can only contain alphabets, spaces, apostrophes, or hyphens' };
+import { createApiPaginatedResponseSchema, createApiResponseSchema } from '@/common/helpers/api-response';
+import { nameRegex, passwordRegex, phoneNumberRegex, resetCodeRegex, validateText } from '@/common/helpers/validations';
+import { createStrictZodDto } from '@/common/helpers/zod-strict';
+import {
+    publicUserSelectSchema,
+    userSelectSchema,
+    userUpdateSchema,
+    type PublicUserOutput,
+    type UserInsertInput,
+    type UserSelectOutput,
+    type UserUpdateInput,
+} from '@/models/zod-schemas';
+
 // Base schemas for user operations
 const loginSchema = z.object({
     email: z.email('Please enter a valid email address'),
@@ -52,28 +49,16 @@ const forgotPasswordSchema = z.object({
     email: z.email('Please enter a valid email address'),
 });
 
-const resetPasswordSchema = z
-    .object({
-        email: z.email('Please enter a valid email address'),
-        code: validateText({ regex: resetcodeRegex, min: 6, max: 6 }),
-        password: validateText({ regex: passwordRegex, min: 8, max: 15 }),
-        confirmPassword: z.string(),
-    })
-    .refine((data) => data.password === data.confirmPassword, {
-        message: 'Passwords do not match',
-        path: ['confirmPassword'],
-    });
+const resetPasswordSchema = z.object({
+    email: z.email('Please enter a valid email address'),
+    code: validateText({ regex: resetCodeRegex, min: 6, max: 6 }),
+    password: validateText({ regex: passwordRegex, min: 8, max: 15 }),
+});
 
-const changePasswordSchema = z
-    .object({
-        currentPassword: z.string().min(1, 'Current password is required'),
-        password: validateText({ regex: passwordRegex, min: 8, max: 15 }),
-        confirmPassword: z.string(),
-    })
-    .refine((data) => data.password === data.confirmPassword, {
-        message: 'Passwords do not match',
-        path: ['confirmPassword'],
-    });
+const changePasswordSchema = z.object({
+    currentPassword: z.string().min(1, 'Current password is required'),
+    password: validateText({ regex: passwordRegex, min: 8, max: 15 }),
+});
 
 const resendVerificationSchema = z.object({
     email: z.email('Please enter a valid email address'),

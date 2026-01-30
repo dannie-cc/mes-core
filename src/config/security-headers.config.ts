@@ -80,15 +80,15 @@ const WS = 'ws:';
 const WSS = 'wss:';
 
 // Domain configurations for separate frontend/backend projects
-const DANNIE_DOMAINS = '*.dannie.app api.dannie.app';
+const DANNIE_DOMAINS = '*.grvt.cc api.grvt.cc mes.grvt.cc';
 
 // Frontend project URLs (separate from backend) - using environment variables
 const FRONTEND_URLS = isDevelopment
     ? `${CLIENT_URL} ${CLIENT_URL.replace('http:', 'https:')}` // Support both HTTP and HTTPS for dev
-    : 'https://dannie.app https://www.dannie.app'; // Production frontend domain
+    : 'https://grvt.cc https://www.grvt.cc https://mes.grvt.cc'; // Production frontend domain
 
 // Allowed origins for cross-origin API requests - using environment variables
-const ALLOWED_ORIGINS = isDevelopment ? `${CLIENT_URL} ${CLIENT_URL.replace('http:', 'https:')}` : 'https://dannie.app https://www.dannie.app';
+const ALLOWED_ORIGINS = isDevelopment ? `${CLIENT_URL} ${CLIENT_URL.replace('http:', 'https:')}` : 'https://grvt.cc https://www.grvt.cc https://mes.grvt.cc';
 
 // Export environment configuration for external use
 export { SECURITY_HEADERS_ENABLED, CSP_REPORT_ONLY, SERVER_URL, CLIENT_URL };
@@ -287,16 +287,7 @@ export const routeSecurityMap: RouteSecurityRule[] = [
         name: 'sensitive',
         priority: 5,
         matcher: (path: string): boolean => {
-            const sensitivePatterns = [
-                '/users/profile*',
-                '/users/me*',
-                '/orders/*',
-                '/account/*',
-                '/settings/*',
-                '*/profile',
-                '*/dashboard',
-                '*/checkout',
-            ];
+            const sensitivePatterns = ['/users/profile*', '/users/me*', '/orders/*', '/account/*', '/settings/*', '*/profile', '*/dashboard', '*/checkout'];
             const matchesSensitive = createWildcardMatcher(sensitivePatterns)(path);
             const matchesUserPattern = /\/users\/[^/]+$/.test(path);
             return matchesSensitive || matchesUserPattern;
