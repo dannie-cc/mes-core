@@ -1,13 +1,7 @@
-import { Controller, Get, Res } from '@nestjs/common';
-import type { Response } from 'express';
-import { join } from 'path';
+import { Controller } from '@nestjs/common';
 
 @Controller('public')
 export class AssetsController {
-    @Get('logo.svg')
-    getLogo(@Res() res: Response) {
-        // Serve from compiled assets location in production (dist/assets)
-        const logoPath = join(process.cwd(), 'dist', 'assets', 'images', 'logo.svg');
-        return res.sendFile(logoPath);
-    }
+    // The ServeStaticModule in AssetsModule handles serving all static assets.
+    // This controller can be used for other public, non-static routes if needed.
 }
