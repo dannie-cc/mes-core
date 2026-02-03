@@ -1,16 +1,17 @@
-import { NestFactory } from '@nestjs/core';
-import { ConfigService } from '@nestjs/config';
+import * as fs from 'fs';
+import path from 'path';
 import { BadRequestException, UnprocessableEntityException } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { NestFactory } from '@nestjs/core';
 import { createZodValidationPipe } from 'nestjs-zod';
 import type { ZodError } from 'zod';
 
-import { API_CONFIG_TOKEN, ENVIRONMENT, IAppConfiguration } from './config';
 import { CustomLoggerService } from '@/app/services/logger/logger.service';
-import { setupSwagger } from './swagger';
+
 import { AppModule } from './app/app.module';
 import { HttpExceptionFilter } from './app/exceptions.filter';
-import path from 'path';
-import * as fs from 'fs';
+import { API_CONFIG_TOKEN, ENVIRONMENT, IAppConfiguration } from './config';
+import { setupSwagger } from './swagger';
 
 async function bootstrap() {
     const logger = new CustomLoggerService();
@@ -78,8 +79,20 @@ async function bootstrap() {
             logger.log(`📚 Swagger documentation available at: http://${host}:${port}/docs`);
         }
 
+        const origins = [clientUrl];
+        if (configuration.environment === ENVIRONMENT.DEVELOPMENT) {
+            origins.push(`http://${host}:${port}`);
+            origins.push(`https://${host}:${port}`);
+        }
+        // Ensure both http and https versions of the actual clientUrl are also allowed
+        if (clientUrl.startsWith('http:')) {
+            origins.push(clientUrl.replace('http:', 'https:'));
+        } else if (clientUrl.startsWith('https:')) {
+            origins.push(clientUrl.replace('https:', 'http:'));
+        }
+
         app.enableCors({
-            origin: configuration.environment === ENVIRONMENT.DEVELOPMENT ? 'http://localhost:3030' : clientUrl,
+            origin: [...new Set(origins)],
             methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
             credentials: true,
             allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],

@@ -58,7 +58,7 @@ const SERVER_PROTOCOL = process.env.SERVER_PROTOCOL || 'http';
 const SERVER_HOST = process.env.SERVER_HOST || 'localhost';
 const SERVER_PORT = process.env.SERVER_PORT || '4000';
 const CLIENT_PROTOCOL = process.env.CLIENT_PROTOCOL || 'http';
-const CLIENT_HOST = process.env.CLIENT_HOST || 'localhost:3030';
+const CLIENT_HOST = process.env.CLIENT_HOST || 'localhost:4000';
 
 // Build URLs from environment variables
 const SERVER_URL = `${SERVER_PROTOCOL}://${SERVER_HOST}:${SERVER_PORT}`;
@@ -127,10 +127,7 @@ const policies = {
             pragma: 'no-cache',
             expires: '0',
         },
-        globalOverrides: {
-            'access-control-allow-origin': CLIENT_URL,
-            'access-control-allow-credentials': 'true',
-        },
+        globalOverrides: {},
     },
 
     moderate: {
@@ -147,10 +144,7 @@ const policies = {
         cache: {
             control: 'private, max-age=300',
         },
-        globalOverrides: {
-            'access-control-allow-origin': CLIENT_URL,
-            'access-control-allow-credentials': 'true',
-        },
+        globalOverrides: {},
     },
 
     minimal: {
@@ -295,10 +289,7 @@ export const routeSecurityMap: RouteSecurityRule[] = [
         policy: {
             ...policies.moderate,
             cache: policies.strict.cache, // Strict caching for sensitive data
-            globalOverrides: {
-                'access-control-allow-origin': CLIENT_URL,
-                'access-control-allow-credentials': 'true',
-            },
+            globalOverrides: {},
         },
     },
 
@@ -309,10 +300,7 @@ export const routeSecurityMap: RouteSecurityRule[] = [
         matcher: createWildcardMatcher(['/api*', '*/api/*']),
         policy: {
             ...policies.moderate,
-            globalOverrides: {
-                'access-control-allow-origin': CLIENT_URL,
-                'access-control-allow-credentials': 'true',
-            },
+            globalOverrides: {},
         },
     },
 ].sort((a, b) => a.priority - b.priority); // Ensure priority sorting
@@ -332,10 +320,7 @@ if (priorities.length !== uniquePriorities.size) {
 export const defaultPolicy: SecurityPolicy = {
     ...policies.moderate,
     cache: { control: 'private, max-age=0' },
-    globalOverrides: {
-        'access-control-allow-origin': CLIENT_URL,
-        'access-control-allow-credentials': 'true',
-    },
+    globalOverrides: {},
 };
 
 export { SecurityPolicy, ContentSecurityPolicy, CachePolicy, RouteSecurityRule };

@@ -1,7 +1,7 @@
 {
     "name": "mes-platform-backend",
     "description": "NestJS backend application for online MES platform for manufacturing enterprises to manage and optimize their production processes.",
-    "version": "1.2.1",
+    "version": "1.3.0",
     "private": true,
     "scripts": {
         "preinstall": "npx only-allow pnpm",

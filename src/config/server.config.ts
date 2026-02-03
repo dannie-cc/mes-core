@@ -1,6 +1,7 @@
 import { registerAs } from '@nestjs/config';
+import type { StringValue } from 'ms';
+
 import { DEFAULT_EXPIRY } from '@/common/constants';
-import type { StringValue } from "ms";
 
 export const API_CONFIG_TOKEN = 'server';
 
